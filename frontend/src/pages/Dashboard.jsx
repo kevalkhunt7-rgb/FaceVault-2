@@ -25,7 +25,7 @@ const Dashboard = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
     try {
-      const response = await axios.post('http://localhost:5001/api/photos/search', formData, {
+      const response = await axios.post('https://facevault-2-1.onrender.com/api/photos/search', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`,
@@ -57,7 +57,7 @@ const Dashboard = () => {
 
     const fetchAllPhotos = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/photos', {
+        const response = await axios.get('https://facevault-2-1.onrender.com/api/photos', {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         });
         setAllPhotos(response.data.images.map(img => img.imageUrl) || []);

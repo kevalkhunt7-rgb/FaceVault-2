@@ -18,7 +18,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const response = await axios.get('http://localhost:5001/api/photos', {
+      const response = await axios.get('https://facevault-2-1.onrender.com/api/photos', {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       setImages(response.data.images || []);
@@ -37,7 +37,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
 
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      await axios.post('http://localhost:5001/api/photos/upload', formData, {
+      await axios.post('https://facevault-2-1.onrender.com/api/photos/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`
@@ -64,7 +64,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       await Promise.all([...selectedImages].map(id => 
-        axios.delete(`http://localhost:5001/api/photos/${encodeURIComponent(id)}`, {
+        axios.delete(`https://facevault-2-1.onrender.com/api/photos/${encodeURIComponent(id)}`, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         })
       ));
