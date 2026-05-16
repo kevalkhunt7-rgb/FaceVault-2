@@ -25,7 +25,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post('https://facevault-2-1.onrender.com/api/auth/register', {
+      const { data } = await axios.post('https://facevault-2.onrender.com/api/auth/register', {
         name,
         email,
         password,

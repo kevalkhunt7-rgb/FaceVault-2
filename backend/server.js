@@ -30,7 +30,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://face-vault-2-r5a3.vercel.app'
+    'https://face-vault-2.vercel.app'
   ],
   credentials: true
 }));
