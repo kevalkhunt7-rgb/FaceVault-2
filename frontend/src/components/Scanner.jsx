@@ -3,7 +3,7 @@ import Webcam from 'react-webcam';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Loader2, RefreshCcw, Upload, Image as ImageIcon, CheckCircle2, Scan } from 'lucide-react';
 
-const Scanner = ({ onScanComplete, isLoading }) => {
+const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('camera');
@@ -78,7 +78,7 @@ const Scanner = ({ onScanComplete, isLoading }) => {
         }
       `}</style>
 
-      <div className="max-w-md mx-auto bg-[#1a1a1a] rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden flex flex-col h-full">
+      <div className="w-full max-w-md mx-auto bg-[#1a1a1a] rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden flex flex-col">
         
         {/* Header Section */}
         <div className="p-8 text-center bg-gradient-to-b from-[#242424] to-[#1a1a1a]">
@@ -122,7 +122,7 @@ const Scanner = ({ onScanComplete, isLoading }) => {
           </div>
         </div>
         
-        <div className="px-8 pb-10 flex-1 flex flex-col items-center">
+        <div className="px-8 pb-10 flex flex-col items-center">
           {/* Viewport Area */}
           <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden bg-[#0a0a0a] ring-1 ring-white/10 shadow-2xl group">
             
@@ -224,10 +224,14 @@ const Scanner = ({ onScanComplete, isLoading }) => {
                 </button>
                 <button
                   onClick={submitFace}
-                  disabled={isLoading}
-                  className="flex-[2] bg-cyan-600 text-white py-4 rounded-2xl font-bold hover:bg-cyan-500 transition-all shadow-[0_10px_30px_rgba(8,145,178,0.3)] active:scale-[0.98]"
+                  disabled={isLoading || isDatabaseEmpty}
+                  className={`flex-[2] py-4 rounded-2xl font-bold transition-all active:scale-[0.98] ${
+                    isDatabaseEmpty 
+                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5' 
+                    : 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-[0_10px_30px_rgba(8,145,178,0.3)]'
+                  }`}
                 >
-                  Analyze Face
+                  {isDatabaseEmpty ? 'DB Empty' : 'Analyze Face'}
                 </button>
               </div>
             )}

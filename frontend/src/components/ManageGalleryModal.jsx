@@ -8,6 +8,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -58,8 +59,12 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     setSelectedImages(newSelection);
   };
 
-  const handleDeleteSelected = async () => {
-    if (!window.confirm(`Permanently delete ${selectedImages.size} assets?`)) return;
+  const handleDeleteSelected = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
     setIsLoading(true);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -220,6 +225,50 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
           .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #333; }
         `}</style>
+
+        {/* Custom Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-[#1a1a1a] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-full max-w-xs overflow-hidden border border-white/5"
+              >
+                {/* Red Curved Header */}
+                <div className="relative h-32 bg-gradient-to-b from-red-600 to-red-900 flex items-center justify-center">
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-[#1a1a1a] rounded-t-[3rem]" />
+                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4">
+                    <Trash2 size={32} className="text-red-600" />
+                  </div>
+                </div>
+
+                <div className="px-8 pb-8 text-center">
+                  <h3 className="text-xl font-bold text-white mb-2">Are You Sure?</h3>
+                  <p className="text-gray-400 text-xs leading-relaxed mb-8">
+                    You are about to delete {selectedImages.size} selected {selectedImages.size === 1 ? 'asset' : 'assets'}. This action cannot be undone.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={confirmDelete}
+                      className="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-900/20"
+                    >
+                      YES
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 bg-[#2a2a2a] hover:bg-[#333] text-gray-400 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border border-white/5"
+                    >
+                      NO
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

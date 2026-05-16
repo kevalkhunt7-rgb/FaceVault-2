@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ImageIcon, SearchX, Download, Maximize2, Sparkles, AlertCircle, ExternalLink, XCircle, Loader2 } from 'lucide-react';
+import { ImageIcon, SearchX, Download, Maximize2, Sparkles, AlertCircle, ExternalLink, XCircle } from 'lucide-react';
 
-const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
+const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading, isDatabaseEmpty }) => {
   const [fullScreenImage, setFullScreenImage] = useState(null);
 
   const handleShare = async (url) => {
@@ -35,7 +35,6 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Download failed:', err);
-      // Fallback to simple link if fetch fails
       const link = document.createElement('a');
       link.href = url;
       link.target = '_blank';
@@ -112,19 +111,37 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
         ) : matchedPhotos.length === 0 ? (
           /* Empty / Searching States */
           <div className="h-full flex flex-col items-center justify-center text-center">
-            {isLoading && isSearched && matchedPhotos.length === 0 ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative">
-                <div className="absolute inset-0 bg-cyan-500/5 blur-[100px]" />
-                <div className="relative w-24 h-24 bg-[#1a1a1a] border border-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                  <Loader2 size={48} className="text-cyan-400 animate-spin" />
+            {isLoading ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="flex flex-col items-center justify-center"
+              >
+                {/* Re-designed Cyber-Radar Loader Container */}
+                <div className="relative w-28 h-28 flex items-center justify-center mb-6">
+                  {/* Outer Pulsing Glow Rings */}
+                  <div className="absolute inset-0 bg-cyan-500/5 blur-xl rounded-full animate-pulse" />
+                  <div className="absolute inset-0 border border-cyan-500/10 rounded-full animate-[ping_2s_infinite]" />
+                  <div className="absolute inset-2 border border-cyan-500/20 rounded-full animate-[ping_3s_infinite_1s]" />
+                  
+                  {/* Central Core Spinner */}
+                  <div className="w-20 h-20 rounded-full border-2 border-dashed border-cyan-500/20 p-1 animate-[spin_20s_linear_infinite]">
+                    <div className="w-full h-full rounded-full border-2 border-transparent border-t-cyan-400 border-r-cyan-400/40 animate-[spin_1.5s_cubic-bezier(0.53,0.21,0.29,0.67)_infinite]" />
+                  </div>
+
+                  {/* Steady Center Tech Eye */}
+                  <div className="absolute w-6 h-6 bg-[#1a1a1a] border border-cyan-500/40 rounded-full flex items-center justify-center shadow-inner">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-200">Scanning for Matches...</h3>
-                <p className="text-gray-500 mt-2 max-w-[260px] text-sm leading-relaxed">
+
+                <h3 className="text-xl font-bold text-gray-200 tracking-wide">Scanning for Matches...</h3>
+                <p className="text-gray-500 mt-2 max-w-[280px] text-sm leading-relaxed">
                   Please wait while our AI sifts through thousands of moments.
                 </p>
               </motion.div>
-            ) : isSearched && matchedPhotos.length === 0 ? (
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+            ) : isSearched ? (
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center">
                 <div className="w-24 h-24 bg-[#1a1a1a] border border-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner">
                   <SearchX size={48} className="text-gray-700" />
                 </div>
@@ -133,13 +150,26 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
                   The subject wasn't detected in our current database. Try a photo with <b>better lighting</b>.
                 </p>
               </motion.div>
-            ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative">
-                <div className="absolute inset-0 bg-cyan-500/5 blur-[100px] rounded-full" />
-                <div className="relative bg-[#1a1a1a] border border-white/5 shadow-2xl rounded-[3rem] p-12">
-                  <ImageIcon size={64} className="text-gray-800" />
+            ) : isDatabaseEmpty ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-red-500/5 blur-[100px] rounded-full" />
+                  <div className="relative bg-[#1a1a1a] border border-red-500/10 shadow-2xl rounded-[3rem] p-12">
+                    <SearchX size={64} className="text-red-900/50" />
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-300 mt-8 tracking-widest uppercase text-xs">Awaiting Scan</h3>
+                <h3 className="text-lg font-bold text-gray-300 mt-8 tracking-widest uppercase text-xs">Gallery is empty</h3>
+                <p className="text-gray-500 mt-2 max-w-[260px] text-sm leading-relaxed">
+                  You can't upload face for analysis because the database is empty.
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center">
+                <div className="relative bg-[#1a1a1a] border border-white/5 shadow-2xl rounded-[3rem] p-12 mb-6">
+                  <div className="absolute inset-0 bg-cyan-500/5 blur-[40px] rounded-full" />
+                  <ImageIcon size={64} className="text-gray-800 relative z-10" />
+                </div>
+                <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase">Awaiting Scan</h3>
               </motion.div>
             )}
           </div>
@@ -149,13 +179,12 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
             <AnimatePresence>
               {matchedPhotos.map((photoUrl, index) => (
                 <motion.div 
-                  key={photoUrl} // Use URL as key for better tracking
+                  key={photoUrl}
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
                   className="break-inside-avoid relative group rounded-3xl overflow-hidden bg-[#1a1a1a] border border-white/5 shadow-lg hover:border-cyan-500/50 transition-all duration-500"
                 >
-                  {/* High Quality Image Container */}
                   <div className="relative overflow-hidden aspect-auto">
                     <img 
                       src={photoUrl} 
@@ -163,14 +192,10 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
                       className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"
                     />
-                    
-                    {/* Glass Overlay on Hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
 
-                  {/* UI Elements - Appear on Hover */}
                   <div className="absolute inset-0 p-5 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300">
-
                     <div className="flex gap-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                       <button 
                         onClick={() => handleDownload(photoUrl, index)}
@@ -188,7 +213,6 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
                     </div>
                   </div>
 
-                  {/* Corner Badge (Share) */}
                   <button 
                     onClick={() => handleShare(photoUrl)}
                     className="absolute top-4 left-4 bg-[#1a1a1a]/80 hover:bg-cyan-500/20 backdrop-blur-md border border-white/10 p-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
@@ -234,7 +258,6 @@ const Gallery = ({ matchedPhotos, error, isSearched, onReset, isLoading }) => {
         )}
       </AnimatePresence>
 
-      {/* Custom Scrollbar CSS */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
