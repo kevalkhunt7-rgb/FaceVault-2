@@ -79,10 +79,10 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
       `}</style>
 
       <div className="w-full max-w-md mx-auto bg-[#1a1a1a] rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden flex flex-col">
-        
+
         {/* Header Section */}
         <div className="p-8 text-center bg-gradient-to-b from-[#242424] to-[#1a1a1a]">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 mb-4 border border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
@@ -91,7 +91,7 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
           </motion.div>
           <h2 className="text-2xl font-bold text-gray-100 tracking-tight">AI Identity Scan</h2>
           <p className="text-gray-400 mt-2 text-sm">
-            {activeTab === 'camera' 
+            {activeTab === 'camera'
               ? "Align your face for biometric verification."
               : "Upload portrait for facial recognition."}
           </p>
@@ -104,14 +104,13 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); reset(); }}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-300 ${
-                  activeTab === tab ? 'text-cyan-400' : 'text-gray-500 hover:text-gray-300'
-                }`}
+                className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-300 ${activeTab === tab ? 'text-cyan-400' : 'text-gray-500 hover:text-gray-300'
+                  }`}
               >
                 {tab === 'camera' ? <Camera size={14} /> : <Upload size={14} />}
                 {tab}
                 {activeTab === tab && (
-                  <motion.div 
+                  <motion.div
                     layoutId="activeTabDark"
                     className="absolute inset-0 bg-[#222] border border-white/10 shadow-inner rounded-xl -z-10"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
@@ -121,21 +120,21 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
             ))}
           </div>
         </div>
-        
+
         <div className="px-8 pb-10 flex flex-col items-center">
           {/* Viewport Area */}
           <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden bg-[#0a0a0a] ring-1 ring-white/10 shadow-2xl group">
-            
+
             {/* Scanning Animation */}
             {!capturedImg && !selectedFile && activeTab === 'camera' && (
               <div className="absolute inset-0 z-20 pointer-events-none">
                 <div className="animate-scan-line" />
-                
+
                 {/* Targeting Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-2/3 h-4/5 border border-white/10 rounded-[120px] biometric-frame flex items-center justify-center">
-                       <div className="w-10 h-[1px] bg-cyan-400/30 absolute top-1/2 left-0" />
-                       <div className="w-10 h-[1px] bg-cyan-400/30 absolute top-1/2 right-0" />
+                    <div className="w-10 h-[1px] bg-cyan-400/30 absolute top-1/2 left-0" />
+                    <div className="w-10 h-[1px] bg-cyan-400/30 absolute top-1/2 right-0" />
                   </div>
                 </div>
 
@@ -157,7 +156,7 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
 
             <AnimatePresence mode="wait">
               {activeTab === 'camera' ? (
-                <motion.div 
+                <motion.div
                   key="webcam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="w-full h-full"
                 >
@@ -166,15 +165,22 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
                       audio={false}
                       ref={webcamRef}
                       screenshotFormat="image/jpeg"
+                      mirrored={true}
+                      playsInline={true}
+                      videoConstraints={{
+                        facingMode: "user",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                      }}
                       className="w-full h-full object-cover grayscale-[30%] scale-x-[-1]"
-                      videoConstraints={{ facingMode: "user" }}
+                      onUserMediaError={(err) => console.error("Camera Error:", err)}
                     />
                   ) : (
                     <img src={capturedImg} alt="Captured" className="w-full h-full object-cover" />
                   )}
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="w-full h-full bg-[#121212]"
                 >
@@ -190,15 +196,15 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Success Notification */}
             {(capturedImg || selectedFile) && !isLoading && (
-               <motion.div 
-                 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                 className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] z-20"
-               >
-                  <CheckCircle2 size={14} /> Ready to search
-               </motion.div>
+              <motion.div
+                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] z-20"
+              >
+                <CheckCircle2 size={14} /> Ready to search
+              </motion.div>
             )}
           </div>
 
@@ -225,11 +231,10 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
                 <button
                   onClick={submitFace}
                   disabled={isLoading || isDatabaseEmpty}
-                  className={`flex-[2] py-4 rounded-2xl font-bold transition-all active:scale-[0.98] ${
-                    isDatabaseEmpty 
-                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5' 
-                    : 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-[0_10px_30px_rgba(8,145,178,0.3)]'
-                  }`}
+                  className={`flex-[2] py-4 rounded-2xl font-bold transition-all active:scale-[0.98] ${isDatabaseEmpty
+                      ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5'
+                      : 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-[0_10px_30px_rgba(8,145,178,0.3)]'
+                    }`}
                 >
                   {isDatabaseEmpty ? 'DB Empty' : 'Analyze Face'}
                 </button>
