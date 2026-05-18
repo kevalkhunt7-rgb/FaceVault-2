@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Image as ImageIcon, LayoutDashboard, ShieldCheck, XCircle } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import Scanner from '../components/Scanner';
 import Gallery from '../components/Gallery';
 import ManageGalleryModal from '../components/ManageGalleryModal';
+import API_URL from '../config';
 
 const Dashboard = () => {
   const [matchedPhotos, setMatchedPhotos] = useState([]);
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const [allPhotos, setAllPhotos] = useState([]);
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false);
   const [showGalleryOnMobile, setShowGalleryOnMobile] = useState(false);
+  const [userRole, setUserRole] = useState('user');
   const navigate = useNavigate();
 
   const handleScanComplete = async (file) => {
@@ -39,7 +41,7 @@ const Dashboard = () => {
     const userInfo = JSON.parse(userInfoStr);
 
     try {
-      const response = await axios.post('https://facevault-2-1.onrender.com/api/photos/search', formData, {
+      const response = await axios.post(`${API_URL}/photos/search`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`,
@@ -80,6 +82,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr);
+      setUserRole(userInfo.user?.role || userInfo.role || 'user');
+    }
     
     const fetchAllPhotos = async () => {
       try {
@@ -90,7 +96,7 @@ const Dashboard = () => {
           return;
         }
 
-        const response = await axios.get('https://facevault-2-1.onrender.com/api/photos', {
+        const response = await axios.get(`${API_URL}/photos`, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         });
         const photos = response.data.images.map(img => img.imageUrl) || [];
@@ -120,6 +126,11 @@ const Dashboard = () => {
             <h1 className="text-xl font-black tracking-tighter uppercase italic">Face<span className="text-cyan-400">Vault</span></h1>
           </div>
           <div className="flex items-center gap-4">
+            {userRole === 'admin' && (
+              <button onClick={() => navigate('/admin')} className="text-xs font-bold text-cyan-400 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                <ShieldCheck size={16} /> <span className="hidden sm:inline">Admin Panel</span>
+              </button>
+            )}
             <button onClick={handleManageGallery} className="text-xs font-bold text-gray-400 hover:text-cyan-400 transition-all uppercase tracking-widest flex items-center gap-2">
               <ImageIcon size={16} /> <span className="hidden sm:inline">Database</span>
             </button>

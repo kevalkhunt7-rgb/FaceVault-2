@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Trash2, Image as ImageIcon, Loader2, Check, MousePointer2, Layers } from 'lucide-react';
+import API_URL from '../config';
 
 const ManageGalleryModal = ({ isOpen, onClose }) => {
   const [images, setImages] = useState([]);
@@ -19,7 +20,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const response = await axios.get('https://facevault-2.onrender.com/api/photos', {
+      const response = await axios.get(`${API_URL}/photos`, {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       setImages(response.data.images || []);
@@ -38,15 +39,23 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
 
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      await axios.post('https://facevault-2.onrender.com/api/photos/upload', formData, {
+      const response = await axios.post(`${API_URL}/photos/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`
         }
       });
+      
+      if (response.data.errors) {
+        const successCount = response.data.count || 0;
+        const errorCount = response.data.errors.length;
+        alert(`Processed ${successCount + errorCount} files. ${successCount} uploaded, ${errorCount} skipped (no face detected or error).`);
+      }
+      
       fetchImages();
     } catch (error) {
-      alert('Upload failed.');
+      const errorMsg = error.response?.data?.error || 'Upload failed.';
+      alert(errorMsg);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -69,7 +78,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       await Promise.all([...selectedImages].map(id => 
-        axios.delete(`https://facevault-2.onrender.com/api/photos/${encodeURIComponent(id)}`, {
+        axios.delete(`${API_URL}/photos/${encodeURIComponent(id)}`, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         })
       ));

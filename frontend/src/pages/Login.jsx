@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { Camera, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import API_URL from '../config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,7 +25,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post('https://facevault-2.onrender.com/api/auth/login', {
+      const { data } = await axios.post(`${API_URL}/auth/login`, {
         email,
         password,
       });

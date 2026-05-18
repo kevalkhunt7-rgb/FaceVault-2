@@ -47,6 +47,7 @@ const registerUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token: generateToken(user._id),
     });
@@ -72,10 +73,24 @@ const loginUser = async (req, res) => {
 
     email = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
 
-    console.log("Collection name:", User.collection.name);
-    console.log("Fetched user in login:", user);
+    // Check if this is the admin from .env
+    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+      if (!user) {
+        // Create admin user if it doesn't exist
+        user = await User.create({
+          name: 'System Admin',
+          email: process.env.ADMIN_EMAIL,
+          password: process.env.ADMIN_PASSWORD,
+          role: 'admin'
+        });
+      } else if (user.role !== 'admin') {
+        // Update to admin if not already
+        user.role = 'admin';
+        await user.save();
+      }
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -100,6 +115,7 @@ const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token: generateToken(user._id),
     });

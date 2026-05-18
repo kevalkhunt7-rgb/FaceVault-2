@@ -1,4 +1,7 @@
 const cloudinary = require('cloudinary').v2;
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const Photo = require('../models/Photo');
 const canvas = require('canvas');
 const faceapi = require('@vladmandic/face-api/dist/face-api.node-wasm.js');
@@ -26,45 +29,67 @@ const uploadPhotos = async (req, res) => {
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
+    console.log(`[Upload] Processing ${req.files.length} files for user ${req.user._id}`);
     const uploadedPhotos = [];
+    const errors = [];
 
-    for (const file of req.files) {
-      // 1. Convert multer buffer to canvas Image
-      const img = await canvas.loadImage(file.buffer);
+    // Process files in small chunks to prevent memory spikes and event loop blocking
+    const CHUNK_SIZE = 2; 
+    for (let i = 0; i < req.files.length; i += CHUNK_SIZE) {
+      const chunk = req.files.slice(i, i + CHUNK_SIZE);
+      
+      await Promise.all(chunk.map(async (file) => {
+        try {
+          // 1. Convert multer buffer to canvas Image
+          const img = await canvas.loadImage(file.buffer);
 
-      // 2. Detect faces and descriptors
-      const detections = await faceapi.detectAllFaces(img)
-        .withFaceLandmarks()
-        .withFaceDescriptors();
+          // 2. Detect faces and descriptors
+          // Using a slightly more efficient detection configuration
+          const detections = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+            .withFaceLandmarks()
+            .withFaceDescriptors();
 
-      if (detections && detections.length > 0) {
-        // 3. Upload image to Cloudinary
-        const cloudResult = await uploadToCloudinary(file.buffer, file.originalname);
+          if (detections && detections.length > 0) {
+            // 3. Upload image to Cloudinary
+            const cloudResult = await uploadToCloudinary(file.buffer, file.originalname);
 
-        // 4. Save to MongoDB for each detected face descriptor
-        // Alternatively, save the photo once with all descriptors?
-        // Wait, the prompt says `faceDescriptor: [Number]`. We can store one document per face, or change it to array of arrays.
-        // If we store one document per face, it's easier to search.
-        for (const detection of detections) {
-           const photo = await Photo.create({
-             user: req.user._id,
-             imageUrl: cloudResult.secure_url,
-             publicId: cloudResult.public_id,
-             faceDescriptor: Array.from(detection.descriptor) // Convert Float32Array to standard array
-           });
-           uploadedPhotos.push(photo);
+            // 4. Batch save to MongoDB
+            const photoData = detections.map(detection => ({
+              user: req.user._id,
+              imageUrl: cloudResult.secure_url,
+              publicId: cloudResult.public_id,
+              faceDescriptor: Array.from(detection.descriptor)
+            }));
+            
+            const savedPhotos = await Photo.insertMany(photoData);
+            uploadedPhotos.push(...savedPhotos);
+          } else {
+            errors.push({ file: file.originalname, error: 'No face detected' });
+          }
+          
+          // Manually hint GC if possible, or at least clear local refs
+          // img = null; 
+        } catch (fileError) {
+          console.error(`[Upload] Error processing ${file.originalname}:`, fileError.message);
+          errors.push({ file: file.originalname, error: 'Processing failed' });
         }
+      }));
+
+      // Small delay between chunks to allow event loop to breathe and GC to work
+      if (i + CHUNK_SIZE < req.files.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
     res.status(200).json({
-      message: 'Photos uploaded and processed successfully',
-      photos: uploadedPhotos
+      message: uploadedPhotos.length > 0 ? 'Upload complete' : 'Upload failed',
+      count: uploadedPhotos.length,
+      errors: errors.length > 0 ? errors : undefined
     });
 
   } catch (err) {
-    console.error('Error uploading photos:', err);
-    res.status(500).json({ error: 'Failed to upload photos' });
+    console.error('[Upload] Critical error:', err);
+    res.status(500).json({ error: 'Internal server error during processing' });
   }
 };
 
@@ -77,35 +102,35 @@ const searchPhotos = async (req, res) => {
       return res.status(400).json({ error: 'No selfie image uploaded.' });
     }
 
-    // 1. Convert multer buffer to canvas Image
     const img = await canvas.loadImage(req.file.buffer);
-
-    // 2. Detect face in the uploaded selfie
-    const detection = await faceapi.detectSingleFace(img)
+    const detection = await faceapi.detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
       .withFaceLandmarks()
       .withFaceDescriptor();
 
     if (!detection) {
-      return res.status(400).json({ error: 'No face detected in the selfie. Please try again with a clearer photo.' });
+      return res.status(400).json({ error: 'No face detected in the selfie.' });
     }
 
-    // 3. Fetch ONLY the logged-in user's photos from MongoDB
-    const userPhotos = await Photo.find({ user: req.user._id });
+    // Optimization: Use lean() and select only needed fields
+    const userPhotos = await Photo.find({ user: req.user._id })
+      .select('imageUrl faceDescriptor')
+      .lean();
 
     if (userPhotos.length === 0) {
-      return res.status(200).json({ matches: [] }); // No photos to search against
+      return res.status(200).json({ matches: [] });
     }
 
     const matchedImageUrls = new Set();
     const selfieDescriptor = detection.descriptor;
 
-    // 4. Compare selfie descriptor with stored photo descriptors
+    // Use a more aggressive distance threshold for production accuracy
+    const THRESHOLD = 0.55;
+
     for (const photo of userPhotos) {
       const storedDescriptor = new Float32Array(photo.faceDescriptor);
       const distance = faceapi.euclideanDistance(selfieDescriptor, storedDescriptor);
       
-      // Use a distance threshold like 0.45 to 0.6
-      if (distance <= 0.55) {
+      if (distance <= THRESHOLD) {
         matchedImageUrls.add(photo.imageUrl);
       }
     }
@@ -113,8 +138,8 @@ const searchPhotos = async (req, res) => {
     res.status(200).json({ matches: Array.from(matchedImageUrls) });
 
   } catch (err) {
-    console.error('Error in /api/photos/search:', err);
-    res.status(500).json({ error: 'Failed to search photos' });
+    console.error('[Search] Error:', err);
+    res.status(500).json({ error: 'Search failed' });
   }
 };
 
@@ -123,10 +148,13 @@ const searchPhotos = async (req, res) => {
 // @access  Private
 const getPhotos = async (req, res) => {
   try {
-    // Return unique photos for the user
-    const photos = await Photo.find({ user: req.user._id }).select('imageUrl publicId createdAt');
+    // Return unique photos for the user, optimized with lean() and projection
+    const photos = await Photo.find({ user: req.user._id })
+      .select('imageUrl publicId createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
     
-    // Deduplicate by imageUrl since multiple faces might be in one photo
+    // Deduplicate by imageUrl efficiently
     const uniquePhotos = [];
     const urlSet = new Set();
     for (const photo of photos) {
@@ -138,8 +166,8 @@ const getPhotos = async (req, res) => {
 
     res.status(200).json({ images: uniquePhotos });
   } catch (err) {
-    console.error('Error fetching gallery:', err);
-    res.status(500).json({ error: 'Failed to read gallery.' });
+    console.error('[Gallery] Error:', err);
+    res.status(500).json({ error: 'Failed to load gallery' });
   }
 };
 

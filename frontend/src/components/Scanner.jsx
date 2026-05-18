@@ -172,8 +172,11 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                       }}
-                      className="w-full h-full object-cover grayscale-[30%] scale-x-[-1]"
-                      onUserMediaError={(err) => console.error("Camera Error:", err)}
+                      className="w-full h-full object-cover grayscale-[30%]"
+                      onUserMediaError={(err) => {
+                        console.error("Camera Error:", err);
+                        alert("Could not access camera. Please ensure you have granted permission and are using HTTPS.");
+                      }}
                     />
                   ) : (
                     <img src={capturedImg} alt="Captured" className="w-full h-full object-cover" />
@@ -189,8 +192,15 @@ const Scanner = ({ onScanComplete, isLoading, isDatabaseEmpty }) => {
                   ) : (
                     <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors border-2 border-dashed border-white/5 rounded-[2rem]">
                       <ImageIcon size={40} className="text-gray-700 mb-4" />
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Browse File</p>
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Browse or Take Photo</p>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="image/*" 
+                        capture="user"
+                        className="hidden" 
+                      />
                     </label>
                   )}
                 </motion.div>

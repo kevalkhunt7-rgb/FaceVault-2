@@ -27,17 +27,15 @@ connectDB();
 connectCloudinary();
 
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://face-vault-2.vercel.app'
-  ],
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://face-vault-2.vercel.app'] 
+    : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 const MODEL_DIR = path.join(__dirname, 'models');
 
@@ -59,6 +57,24 @@ async function initFaceAPI() {
 // Routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/photos', require('./src/routes/photoRoutes'));
+app.use('/api/admin', require('./src/routes/adminRoutes'));
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err);
+  
+  if (err instanceof require('multer').MulterError) {
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: 'Too many files. Maximum 20 allowed at once.' });
+    }
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'One or more files are too large. Maximum 10MB per file.' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 async function startServer() {
   try {

@@ -22,6 +22,11 @@ const photoSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Add compound index for faster user-specific searches
+photoSchema.index({ user: 1, createdAt: -1 });
+// Add index for publicId for faster deletions
+photoSchema.index({ publicId: 1 });
+
 const Photo = mongoose.model('Photo', photoSchema);
 
 module.exports = Photo;

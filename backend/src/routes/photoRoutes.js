@@ -12,7 +12,7 @@ const upload = require('../middleware/uploadMiddleware');
 router.route('/')
   .get(protect, getPhotos);
 
-router.post('/upload', protect, upload.array('photos', 20), uploadPhotos);
+router.post('/upload', protect, upload.array('photos', 10), uploadPhotos);
 router.post('/search', protect, upload.single('selfie'), searchPhotos);
 router.delete('/:publicId', protect, deletePhoto);
 
