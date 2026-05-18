@@ -21,7 +21,7 @@ const AdminPanel = () => {
     setIsLoading(true);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const { data } = await axios.get(`${API_URL}/admin/users`, {
+      const { data } = await axios.get(`${API_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       setUsers(data);
@@ -36,7 +36,7 @@ const AdminPanel = () => {
     setUpdatingUserId(userId);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      await axios.put(`${API_URL}/admin/users/${userId}/role`, { role: newRole }, {
+      await axios.put(`${API_URL}/api/admin/users/${userId}/role`, { role: newRole }, {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       

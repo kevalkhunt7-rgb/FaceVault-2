@@ -20,7 +20,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const response = await axios.get(`${API_URL}/photos`, {
+      const response = await axios.get(`${API_URL}/api/photos`, {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       setImages(response.data.images || []);
@@ -39,7 +39,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
 
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const response = await axios.post(`${API_URL}/photos/upload`, formData, {
+      const response = await axios.post(`${API_URL}/api/photos/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`
@@ -78,7 +78,7 @@ const ManageGalleryModal = ({ isOpen, onClose }) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       await Promise.all([...selectedImages].map(id => 
-        axios.delete(`${API_URL}/photos/${encodeURIComponent(id)}`, {
+        axios.delete(`${API_URL}/api/photos/${encodeURIComponent(id)}`, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         })
       ));

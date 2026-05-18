@@ -41,7 +41,7 @@ const Dashboard = () => {
     const userInfo = JSON.parse(userInfoStr);
 
     try {
-      const response = await axios.post(`${API_URL}/photos/search`, formData, {
+      const response = await axios.post(`${API_URL}/api/photos/search`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`,
@@ -96,7 +96,7 @@ const Dashboard = () => {
           return;
         }
 
-        const response = await axios.get(`${API_URL}/photos`, {
+        const response = await axios.get(`${API_URL}/api/photos`, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         });
         const photos = response.data.images.map(img => img.imageUrl) || [];
